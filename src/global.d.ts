@@ -30,3 +30,14 @@ declare namespace NodeJS {
         API_KEY: string;
     }
 }
+
+// Fix: Add types for Vite's `import.meta.env` to resolve TypeScript error.
+// This informs TypeScript about the shape of environment variables
+// provided by Vite, making them accessible in a type-safe manner.
+interface ImportMetaEnv {
+  readonly VITE_API_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
