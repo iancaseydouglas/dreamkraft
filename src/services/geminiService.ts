@@ -5,8 +5,27 @@
 
 import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
 
-// Fix: Removed non-null assertion as it's no longer needed with proper global types.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+/**
+ * Lazily initializes and returns the GoogleGenAI client.
+ * This ensures the API key is read from process.env *after* it has been
+ * polyfilled at the application's entry point, preventing a startup crash.
+ */
+const getAiClient = (): GoogleGenAI => {
+    if (!ai) {
+        if (!process.env.API_KEY) {
+            const errorMsg = "FATAL: Gemini API key is not configured. The application cannot start. Please ensure VITE_API_KEY is set in your .env.local file and that the development server has been restarted.";
+            console.error(errorMsg);
+            // Also alert the user, as console errors can be missed during startup.
+            alert(errorMsg);
+            throw new Error(errorMsg);
+        }
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+    return ai;
+};
+
 
 // Helper function to convert a File object to a Gemini API Part
 const fileToPart = async (file: File): Promise<{ inlineData: { mimeType: string; data: string; } }> => {
@@ -87,7 +106,8 @@ Output ONLY the final composited image. Do not return any text.`;
 
     const allParts = [textPart, ...imageParts];
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response: GenerateContentResponse = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: { parts: allParts },
         config: {
@@ -120,7 +140,8 @@ Safety & Ethics Policy:
 Output: Return ONLY the final edited image. Do not return text.`;
     const textPart = { text: prompt };
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response: GenerateContentResponse = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: { parts: [originalImagePart, textPart] },
         config: {
@@ -146,7 +167,8 @@ Safety & Ethics Policy:
 Output: Return ONLY the final styled image. Do not return text.`;
     const textPart = { text: prompt };
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response: GenerateContentResponse = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: { parts: [originalImagePart, textPart] },
         config: {
@@ -176,7 +198,8 @@ Safety & Ethics Policy:
 Output: Return ONLY the final adjusted image. Do not return text.`;
     const textPart = { text: prompt };
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response: GenerateContentResponse = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: { parts: [originalImagePart, textPart] },
         config: {
@@ -213,7 +236,8 @@ Output: Return ONLY the final framed image. Do not return text.`;
 
     const textPart = { text: prompt };
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response: GenerateContentResponse = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: { parts: [originalImagePart, textPart] },
         config: {
